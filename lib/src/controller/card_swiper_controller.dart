@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter_card_swiper/src/controller/controller_event.dart';
 import 'package:flutter_card_swiper/src/enums.dart';
 
 /// A controller that can be used to trigger swipes on a CardSwiper widget.
@@ -28,4 +27,22 @@ class CardSwiperController {
   Future<void> dispose() async {
     await _eventController.close();
   }
+}
+
+sealed class ControllerEvent {
+  const ControllerEvent();
+}
+
+class ControllerSwipeEvent extends ControllerEvent {
+  final CardSwiperDirection direction;
+  const ControllerSwipeEvent(this.direction);
+}
+
+class ControllerUndoEvent extends ControllerEvent {
+  const ControllerUndoEvent();
+}
+
+class ControllerMoveEvent extends ControllerEvent {
+  final int index;
+  const ControllerMoveEvent(this.index);
 }

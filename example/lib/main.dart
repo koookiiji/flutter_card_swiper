@@ -32,6 +32,20 @@ class _ExamplePageState extends State<Example> {
     super.dispose();
   }
 
+  // スワイプ方向に応じて色を返す関数
+  Color _getOverlayColor(
+      int horizontalThresholdPercentage, CardSwiperDirection direction) {
+    if (direction == CardSwiperDirection.right) {
+      return Colors.red.withOpacity(
+          (horizontalThresholdPercentage.abs() / 100).clamp(0.0, 1.0));
+    } else if (direction == CardSwiperDirection.left) {
+      return Colors.blue.withOpacity(
+          (horizontalThresholdPercentage.abs() / 100).clamp(0.0, 1.0));
+    } else {
+      return Colors.transparent;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,13 +61,34 @@ class _ExamplePageState extends State<Example> {
                 numberOfCardsDisplayed: 3,
                 backCardOffset: const Offset(40, 40),
                 padding: const EdgeInsets.all(24.0),
+                allowedSwipeDirection: AllowedSwipeDirection.only(
+                  left: true,
+                  right: true,
+                ),
+                threshold: 30, // スワイプの閾値を小さくする
                 cardBuilder: (
-                  context,
-                  index,
-                  horizontalThresholdPercentage,
-                  verticalThresholdPercentage,
-                ) =>
-                    cards[index],
+                    context,
+                    index,
+                    horizontalThresholdPercentage,
+                    verticalThresholdPercentage,
+                    ) {
+                  final direction = horizontalThresholdPercentage > 0
+                      ? CardSwiperDirection.right
+                      : horizontalThresholdPercentage < 0
+                      ? CardSwiperDirection.left
+                      : CardSwiperDirection.none;
+
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      cards[index],
+                      Container(
+                        color: _getOverlayColor(
+                            horizontalThresholdPercentage, direction),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
             Padding(
@@ -74,15 +109,6 @@ class _ExamplePageState extends State<Example> {
                         controller.swipe(CardSwiperDirection.right),
                     child: const Icon(Icons.keyboard_arrow_right),
                   ),
-                  FloatingActionButton(
-                    onPressed: () => controller.swipe(CardSwiperDirection.top),
-                    child: const Icon(Icons.keyboard_arrow_up),
-                  ),
-                  FloatingActionButton(
-                    onPressed: () =>
-                        controller.swipe(CardSwiperDirection.bottom),
-                    child: const Icon(Icons.keyboard_arrow_down),
-                  ),
                 ],
               ),
             ),
@@ -93,10 +119,10 @@ class _ExamplePageState extends State<Example> {
   }
 
   bool _onSwipe(
-    int previousIndex,
-    int? currentIndex,
-    CardSwiperDirection direction,
-  ) {
+      int previousIndex,
+      int? currentIndex,
+      CardSwiperDirection direction,
+      ) {
     debugPrint(
       'The card $previousIndex was swiped to the ${direction.name}. Now the card $currentIndex is on top',
     );
@@ -104,12 +130,12 @@ class _ExamplePageState extends State<Example> {
   }
 
   bool _onUndo(
-    int? previousIndex,
-    int currentIndex,
-    CardSwiperDirection direction,
-  ) {
+      int? previousIndex,
+      int currentIndex,
+      CardSwiperDirection direction,
+      ) {
     debugPrint(
-      'The card $currentIndex was undod from the ${direction.name}',
+      'The card $currentIndex was undone from the ${direction.name}',
     );
     return true;
   }

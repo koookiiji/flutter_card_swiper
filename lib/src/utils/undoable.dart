@@ -1,4 +1,4 @@
-class Undoable<T> {
+class Undoable<T> {//戻る機能
   Undoable(this._value, {Undoable<T>? previousValue})
       : _previous = previousValue;
 

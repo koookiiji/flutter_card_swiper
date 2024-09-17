@@ -10,8 +10,6 @@ class CardAnimation {
     required this.maxAngle,
     required this.initialScale,
     required this.initialOffset,
-    this.isHorizontalSwipingEnabled = true,
-    this.isVerticalSwipingEnabled = true,
     this.allowedSwipeDirection = const AllowedSwipeDirection.all(),
     this.onSwipeDirectionChanged,
   }) : scale = initialScale;
@@ -20,8 +18,6 @@ class CardAnimation {
   final double initialScale;
   final Offset initialOffset;
   final AnimationController animationController;
-  final bool isHorizontalSwipingEnabled;
-  final bool isVerticalSwipingEnabled;
   final AllowedSwipeDirection allowedSwipeDirection;
   final ValueChanged<CardSwiperDirection>? onSwipeDirectionChanged;
 
@@ -57,48 +53,22 @@ class CardAnimation {
   }
 
   void update(double dx, double dy, bool inverseAngle) {
-    if (allowedSwipeDirection.right && allowedSwipeDirection.left) {
-      if (left > 0) {
-        onSwipeDirectionChanged?.call(CardSwiperDirection.right);
-      } else if (left < 0) {
-        onSwipeDirectionChanged?.call(CardSwiperDirection.left);
-      }
-      left += dx;
-    } else if (allowedSwipeDirection.right) {
-      if (left >= 0) {
-        onSwipeDirectionChanged?.call(CardSwiperDirection.right);
-        left += dx;
-      }
-    } else if (allowedSwipeDirection.left) {
-      if (left <= 0) {
-        onSwipeDirectionChanged?.call(CardSwiperDirection.left);
-        left += dx;
-      }
-    }
-
-    if (allowedSwipeDirection.up && allowedSwipeDirection.down) {
-      if (top > 0) {
-        onSwipeDirectionChanged?.call(CardSwiperDirection.bottom);
-      } else if (top < 0) {
-        onSwipeDirectionChanged?.call(CardSwiperDirection.top);
-      }
-      top += dy;
-    } else if (allowedSwipeDirection.up) {
-      if (top <= 0) {
-        onSwipeDirectionChanged?.call(CardSwiperDirection.top);
-        top += dy;
-      }
-    } else if (allowedSwipeDirection.down) {
-      if (top >= 0) {
-        onSwipeDirectionChanged?.call(CardSwiperDirection.bottom);
-        top += dy;
-      }
-    }
+    left += dx;
+    top += dy;
 
     total = left + top;
     updateAngle(inverseAngle);
     updateScale();
     updateDifference();
+
+    // スワイプ方向の変更を通知
+    if (left > 0) {
+      onSwipeDirectionChanged?.call(CardSwiperDirection.right);
+    } else if (left < 0) {
+      onSwipeDirectionChanged?.call(CardSwiperDirection.left);
+    } else {
+      onSwipeDirectionChanged?.call(CardSwiperDirection.none);
+    }
   }
 
   void updateAngle(bool inverse) {
@@ -136,13 +106,16 @@ class CardAnimation {
   }
 
   void animate(BuildContext context, CardSwiperDirection direction) {
-    return switch (direction) {
-      CardSwiperDirection.left => animateHorizontally(context, false),
-      CardSwiperDirection.right => animateHorizontally(context, true),
-      CardSwiperDirection.top => animateVertically(context, false),
-      CardSwiperDirection.bottom => animateVertically(context, true),
-      CardSwiperDirection.none => null,
-    };
+    switch (direction) {
+      case CardSwiperDirection.left:
+        animateHorizontally(context, false);
+        break;
+      case CardSwiperDirection.right:
+        animateHorizontally(context, true);
+        break;
+      case CardSwiperDirection.none:
+        break;
+    }
   }
 
   void animateHorizontally(BuildContext context, bool isToRight) {
@@ -154,29 +127,7 @@ class CardAnimation {
     ).animate(animationController);
     _topAnimation = Tween<double>(
       begin: top,
-      end: top + top,
-    ).animate(animationController);
-    _scaleAnimation = Tween<double>(
-      begin: scale,
-      end: 1.0,
-    ).animate(animationController);
-    _differenceAnimation = Tween<Offset>(
-      begin: difference,
-      end: initialOffset,
-    ).animate(animationController);
-    animationController.forward();
-  }
-
-  void animateVertically(BuildContext context, bool isToBottom) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    _leftAnimation = Tween<double>(
-      begin: left,
-      end: left + left,
-    ).animate(animationController);
-    _topAnimation = Tween<double>(
-      begin: top,
-      end: isToBottom ? screenHeight : -screenHeight,
+      end: top,
     ).animate(animationController);
     _scaleAnimation = Tween<double>(
       begin: scale,
@@ -210,13 +161,16 @@ class CardAnimation {
   }
 
   void animateUndo(BuildContext context, CardSwiperDirection direction) {
-    return switch (direction) {
-      CardSwiperDirection.left => animateUndoHorizontally(context, false),
-      CardSwiperDirection.right => animateUndoHorizontally(context, true),
-      CardSwiperDirection.top => animateUndoVertically(context, false),
-      CardSwiperDirection.bottom => animateUndoVertically(context, true),
-      _ => null
-    };
+    switch (direction) {
+      case CardSwiperDirection.left:
+        animateUndoHorizontally(context, false);
+        break;
+      case CardSwiperDirection.right:
+        animateUndoHorizontally(context, true);
+        break;
+      default:
+        break;
+    }
   }
 
   void animateUndoHorizontally(BuildContext context, bool isToRight) {
@@ -228,29 +182,7 @@ class CardAnimation {
     ).animate(animationController);
     _topAnimation = Tween<double>(
       begin: top,
-      end: top + top,
-    ).animate(animationController);
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: scale,
-    ).animate(animationController);
-    _differenceAnimation = Tween<Offset>(
-      begin: initialOffset,
-      end: difference,
-    ).animate(animationController);
-    animationController.forward();
-  }
-
-  void animateUndoVertically(BuildContext context, bool isToBottom) {
-    final size = MediaQuery.of(context).size;
-
-    _leftAnimation = Tween<double>(
-      begin: left,
-      end: left + left,
-    ).animate(animationController);
-    _topAnimation = Tween<double>(
-      begin: isToBottom ? -size.height : size.height,
-      end: 0,
+      end: top,
     ).animate(animationController);
     _scaleAnimation = Tween<double>(
       begin: 1.0,
